@@ -1,0 +1,48 @@
+name: Deploy to staging
+ 
+on:
+  push:
+    branches: [develop]
+
+jobs:
+  web-deploy:
+    name: 🎉 Deploy
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+    - name: 🚚 Get latest code
+      uses: actions/checkout@v4
+
+    - name: Create env file
+      run: |
+        touch .env
+        echo ${{ secrets.ENV_FILE }} >> .env
+        echo "!.env" > .git-ftp-include # Add git untracked file
+
+    - name: Use Node.js 20
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+      
+    # - name: 🔨 Build Project
+    #   run: |
+    #     composer install --prefer-dist --no-progress --optimize-autoloader --no-dev
+
+    # - name: 📂 Sync files
+    #   uses: SamKirkland/FTP-Deploy-Action@v4.3.4
+    #   with:
+    #     server: node97-eu.n0c.com
+    #     username: ${{ secrets.FTP_USERNAME }}
+    #     password: ${{ secrets.FTP_PASSWORD }}
+    #     server-dir: /staging/
+
+    - name: 📂 Sync files
+      uses: easingthemes/ssh-deploy@main
+      with:
+        SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        REMOTE_HOST: node97-eu.n0c.com
+        REMOTE_PORT: 5022
+        REMOTE_USER: ${{ secrets.REMOTE_USER }}
+        TARGET: staging/
+        SCRIPT_AFTER: |
+          composer install --prefer-dist --no-progress --optimize-autoloader --no-dev
